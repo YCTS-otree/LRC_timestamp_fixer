@@ -1,17 +1,63 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import os
 import re
 import shutil
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
-# ===== 可调参数 =====
-TICK_MS = 10          # 0.01s = 10ms
-MAKE_BACKUP = True    # 是否生成 .bak 备份
-RECURSIVE = True      # 目录模式是否递归扫描子目录
-# ====================
+# ===== 可调参数（来自外部配置文件）=====
+DEFAULT_CONFIG = {
+    "TICK_MS": 10,        # 0.01s = 10ms
+    "MAKE_BACKUP": True,  # 是否生成 .bak 备份
+    "RECURSIVE": True,    # 目录模式是否递归扫描子目录
+}
+CONFIG_FILENAME = "lrc_timestamp_fixer_config.json"
+# ===============================
+
+def write_config_file(path: str, data: dict) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+def normalize_config_value(value, default):
+    if isinstance(default, bool):
+        return value if isinstance(value, bool) else default
+    if isinstance(default, int):
+        return value if isinstance(value, int) and value > 0 else default
+    return value if value is not None else default
+
+def load_config(path: str) -> dict:
+    if not os.path.exists(path):
+        write_config_file(path, DEFAULT_CONFIG)
+        return DEFAULT_CONFIG.copy()
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    merged = {}
+    for key, default in DEFAULT_CONFIG.items():
+        merged[key] = normalize_config_value(data.get(key), default)
+
+    if merged != data:
+        write_config_file(path, merged)
+
+    return merged
+
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), CONFIG_FILENAME)
+CONFIG = load_config(CONFIG_PATH)
+
+TICK_MS = CONFIG["TICK_MS"]
+MAKE_BACKUP = CONFIG["MAKE_BACKUP"]
+RECURSIVE = CONFIG["RECURSIVE"]
 
 # 匹配时间戳：[mm:ss.xx] / [m:ss.xxx]，小数位可 1~3
 TS_RE = re.compile(r"\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]")

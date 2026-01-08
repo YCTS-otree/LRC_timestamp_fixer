@@ -1,0 +1,5 @@
+{
+  "TICK_MS": 10,
+  "MAKE_BACKUP": true,
+  "RECURSIVE": true
+}

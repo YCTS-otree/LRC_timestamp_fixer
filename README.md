@@ -112,7 +112,7 @@ python lrc_timestamp_fixer.py
 
 ## 配置
 
-脚本顶部可调整：
+首次运行会在脚本同目录生成 `lrc_timestamp_fixer_config.json`，可直接修改：
 
 * `TICK_MS`：默认 `10`（即 10ms / 0.01s）
 * `MAKE_BACKUP`：是否生成 `.bak` 备份
